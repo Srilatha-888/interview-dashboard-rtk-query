@@ -1,6 +1,5 @@
 import { createApi, fakeBaseQuery } from '@reduxjs/toolkit/query/react';
 
-// In-memory data store to simulate a backend
 let questionsData = [
   {
     id: '1',
@@ -13,7 +12,7 @@ let questionsData = [
     id: '2',
     title: 'Explain Redux',
     answer: 'Redux is a predictable state container for JavaScript apps.',
-    tags: 'Redux,State Management',
+    tags: 'Redux,State',
     difficulty: 'Medium'
   },
   {

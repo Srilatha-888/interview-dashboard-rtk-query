@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { setSearchTerm } from '../features/questions/questionsSlice';
 import {
@@ -31,6 +31,20 @@ const Dashboard = () => {
     tags: '',
     difficulty: 'Easy'
   });
+  const [addError, setAddError] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
+
+  // Reset to first page when search term changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+  const closeAddModal = () => {
+    setShowAddModal(false);
+    setNewQuestion({ title: '', tags: '', difficulty: 'Easy' });
+    setAddError('');
+  };
 
   const handleDelete = (id) => {
     deleteQuestion(id);
@@ -38,12 +52,18 @@ const Dashboard = () => {
 
   const handleEdit = (question) => {
     setEditingQuestion(question);
-    const tagsArray = Array.isArray(question.tags) ? question.tags : question.tags ? question.tags.split(',') : [];
+    let tagsArray = [];
+    
+    if (Array.isArray(question.tags)) {
+      tagsArray = question.tags;
+    } else if (typeof question.tags === 'string' && question.tags.trim() !== '') {
+      tagsArray = question.tags.split(',').map(tag => tag.trim()).filter(Boolean);
+    }
   
     setEditForm({
-      title: question.title,
+      title: question.title || '',
       tags: tagsArray.join(', '),
-      difficulty: question.difficulty
+      difficulty: question.difficulty || 'Easy'
     });
   };
   
@@ -71,19 +91,34 @@ const Dashboard = () => {
 
   const handleAddQuestion = (e) => {
     e.preventDefault();
-    if (newQuestion.title.trim()) {
-      addQuestion({
-        title: newQuestion.title,
-        tags: newQuestion.tags.split(',').map(tag => tag.trim()),
-        difficulty: newQuestion.difficulty
-      });
-      setNewQuestion({
-        title: '',
-        tags: '',
-        difficulty: 'Easy'
-      });
-      setShowAddModal(false);
+    const candidateTitle = newQuestion.title.trim();
+    if (!candidateTitle) {
+      setAddError('Title is required');
+      return;
     }
+
+    // Check for duplicate title (case-insensitive, trimmed)
+    const exists = (questions || []).some(
+      (q) => (q.title || '').trim().toLowerCase() === candidateTitle.toLowerCase()
+    );
+
+    if (exists) {
+      setAddError('Question already exists');
+      return;
+    }
+
+    addQuestion({
+      title: candidateTitle,
+      tags: newQuestion.tags.split(',').map(tag => tag.trim()).filter(Boolean),
+      difficulty: newQuestion.difficulty
+    });
+    setNewQuestion({
+      title: '',
+      tags: '',
+      difficulty: 'Easy'
+    });
+    setAddError('');
+    setShowAddModal(false);
   };
 
   const filteredQuestions = (questions || []).filter((q) => {
@@ -93,6 +128,18 @@ const Dashboard = () => {
     const term = (searchTerm || '').toLowerCase();
     return title.includes(term) || tags.includes(term);
   });
+
+  // Adjust currentPage if it goes out of range when filteredQuestions changes
+  useEffect(() => {
+    const totalPages = Math.max(1, Math.ceil(filteredQuestions.length / ITEMS_PER_PAGE));
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [filteredQuestions.length, currentPage]);
+
+  const totalItems = filteredQuestions.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / ITEMS_PER_PAGE));
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedQuestions = filteredQuestions.slice(startIndex, endIndex);
 
   return (
     <div className="main-layout">
@@ -127,7 +174,11 @@ const Dashboard = () => {
     onBlur={(e) => e.target.style.borderColor = '#ccc'}
   />
   <button 
-    onClick={() => setShowAddModal(true)}
+    onClick={() => { 
+      setNewQuestion({ title: '', tags: '', difficulty: 'Easy' });
+      setAddError(''); 
+      setShowAddModal(true); 
+    }}
     style={{
       backgroundColor: '#4a90e2',
       color: '#fff',
@@ -166,7 +217,7 @@ const Dashboard = () => {
                   <td colSpan="4" style={{ textAlign: 'center', padding: '1rem' }}>Failed to load</td>
                 </tr>
               ) : filteredQuestions.length > 0 ? (
-                filteredQuestions.map(q => (
+                paginatedQuestions.map(q => (
                   <tr key={q.id} className="question-row">
                     <td data-label="Title">{q.title}</td>
                     <td data-label="Tags">
@@ -177,7 +228,7 @@ const Dashboard = () => {
                       </div>
                     </td>
                     <td data-label="Difficulty">
-                      <span className={`difficulty difficulty-${q.difficulty.toLowerCase()}`}>
+                      <span className={`difficulty difficulty-${q.difficulty?.toLowerCase() || 'easy'}`}>
                         {q.difficulty}
                       </span>
                     </td>
@@ -207,6 +258,42 @@ const Dashboard = () => {
             </tbody>
           </table>
         </div>
+        {filteredQuestions.length > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginTop: '12px', flexWrap: 'wrap' }}>
+            <div style={{ fontSize: '12px', color: '#555' }}>
+              Showing {totalItems === 0 ? 0 : startIndex + 1}-{Math.min(endIndex, totalItems)} of {totalItems}
+            </div>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #ccc', background: currentPage === 1 ? '#eee' : '#fff', cursor: currentPage === 1 ? 'not-allowed' : 'pointer' }}
+              >
+                Prev
+              </button>
+              {Array.from({ length: totalPages }).map((_, i) => {
+                const page = i + 1;
+                const active = page === currentPage;
+                return (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #4a90e2', background: active ? '#4a90e2' : '#fff', color: active ? '#fff' : '#4a90e2', cursor: 'pointer' }}
+                  >
+                    {page}
+                  </button>
+                );
+              })}
+              <button
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #ccc', background: currentPage === totalPages ? '#eee' : '#fff', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer' }}
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
         {showAddModal && (
           <div className="modal-overlay">
             <div className="modal">
@@ -219,9 +306,11 @@ const Dashboard = () => {
                     value={newQuestion.title}
                     onChange={(e) => setNewQuestion({...newQuestion, title: e.target.value})}
                     placeholder="Enter question title"
-                    required
                   />
                 </div>
+                {addError && (
+                  <div style={{ color: 'red', marginTop: '-8px', marginBottom: '8px' }}>{addError}</div>
+                )}
                 <div className="form-group">
                   <label>Tags (comma separated)</label>
                   <input
@@ -247,7 +336,7 @@ const Dashboard = () => {
                   <button 
                     type="button" 
                     className="cancel-button"
-                    onClick={() => setShowAddModal(false)}
+                    onClick={closeAddModal}
                   >
                     Cancel
                   </button>

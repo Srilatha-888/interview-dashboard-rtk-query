@@ -1,4 +1,5 @@
 import React from 'react';
+import './QuestionCard.css';
 
 const QuestionCard = ({ question, onDelete, onEdit }) => {
   return (
@@ -6,11 +7,14 @@ const QuestionCard = ({ question, onDelete, onEdit }) => {
       <h3>{question.title}</h3>
       <div className="tags">
         {question.tags.map((tag, index) => (
-          <span key={index} className="tag">{tag}</span>
+          <span key={index} className="tag">
+            {tag}
+          </span>
         ))}
       </div>
       <div className="difficulty">
-        Difficulty: <span className={`difficulty-${question.difficulty.toLowerCase()}`}>
+        Difficulty:{' '}
+        <span className={`difficulty-${question.difficulty.toLowerCase()}`}>
           {question.difficulty}
         </span>
       </div>

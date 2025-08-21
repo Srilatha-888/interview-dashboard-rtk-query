@@ -15,7 +15,7 @@ const fetchQuestionsAPI = async () => {
           id: '2', 
           title: 'Explain Redux', 
           answer: 'Redux is a predictable state container for JavaScript apps.',
-          tags: 'Redux,State Management', 
+          tags: 'Redux,State', 
           difficulty: 'Medium' 
         },
         {
@@ -40,7 +40,13 @@ export const fetchQuestions = createAsyncThunk(
 
 export const addNewQuestion = createAsyncThunk(
   'questions/addNewQuestion',
-  async (question) => {
+  async (question, { getState, rejectWithValue }) => {
+    const state = getState();
+    const questions = state.questions.questions;
+    const duplicate = questions.find(q => q.title.trim().toLowerCase() === question.title.trim().toLowerCase());
+    if (duplicate) {
+      return rejectWithValue('Question already exists!');
+    }
     return new Promise((resolve) => {
       setTimeout(() => {
         resolve({
@@ -110,6 +116,10 @@ const questionsSlice = createSlice({
       
       .addCase(addNewQuestion.fulfilled, (state, action) => {
         state.questions.unshift(action.payload);
+        state.error = null;
+      })
+      .addCase(addNewQuestion.rejected, (state, action) => {
+        state.error = action.payload || 'Failed to add question.';
       })
       
       .addCase(updateQuestion.fulfilled, (state, action) => {
