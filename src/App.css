@@ -164,7 +164,7 @@ body {
   font-size: 1rem;
 }
 .cancel-button {
-  background-color: #f44336;
+  background-color:white;
   color: white;
   padding: 0.5rem 1.5rem;
   border: none;
@@ -286,7 +286,7 @@ body {
 .delete-btn:hover {
   background-color: #d32f2f;
 }
-@media (max-width: 992px) {
+@media (max-width: 768px) {
   .main-layout {
     flex-direction: column;
   }
@@ -314,7 +314,7 @@ body {
     gap: 8px;
   }
 }
-@media (max-width: 768px) {
+@media (max-width: 375px) {
   .header {
     flex-direction: column;
     align-items: flex-start;

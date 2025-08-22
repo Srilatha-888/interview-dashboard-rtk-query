@@ -49,32 +49,45 @@ const Sidebar = () => {
         className={`sidebar ${isExpanded ? 'expanded' : 'collapsed'} ${
           isMobileOpen ? 'mobile-open' : 'mobile-closed'
         }`}
+        aria-expanded={isExpanded}
+        style={{
+          position: isExpanded ? 'fixed' : 'relative',
+          zIndex: isExpanded ? 1001 : 'auto',
+          width: isExpanded ? '240px' : '60px',
+          left: 0,
+          top: 0,
+          height: '100vh',
+          background: '#333',
+          transition: 'width 0.3s, box-shadow 0.3s',
+          boxShadow: isExpanded ? '2px 0 8px rgba(0,0,0,0.15)' : 'none',
+        }}
       >
         {!isMobile && (
           <button
             className="expand-toggle"
             onClick={() => setIsExpanded(!isExpanded)}
+            aria-label={isExpanded ? 'Collapse sidebar' : 'Expand sidebar'}
           >
             {isExpanded ? <FiChevronLeft /> : <FiChevronRight />}
           </button>
         )}
 
-        <h2>{isExpanded ? 'InterviewApp' : 'IA'}</h2>
+        <h2 style={{ textAlign: 'center', margin: '16px 0' }}>{isExpanded ? 'InterviewApp' : 'IA'}</h2>
 
         <nav>
-          <Link to="/dashboard" className="sidebar-link">
+          <Link to="/dashboard" className="sidebar-link" aria-label="Dashboard">
             <FiHome size={20} />
-            {isExpanded && <span>Dashboard</span>}
+            {isExpanded && <span style={{ marginLeft: 8 }}>Dashboard</span>}
           </Link>
 
-          <Link to="/profile" className="sidebar-link">
+          <Link to="/profile" className="sidebar-link" aria-label="Profile">
             <FiUser size={20} />
-            {isExpanded && <span>Profile</span>}
+            {isExpanded && <span style={{ marginLeft: 8 }}>Profile</span>}
           </Link>
 
-          <button className="sidebar-link logout-btn" onClick={handleLogout}>
+          <button className="sidebar-link logout-btn" onClick={handleLogout} aria-label="Logout">
             <FiLogOut size={20} />
-            {isExpanded && <span>Logout</span>}
+            {isExpanded && <span style={{ marginLeft: 8 }}>Logout</span>}
           </button>
         </nav>
       </div>
